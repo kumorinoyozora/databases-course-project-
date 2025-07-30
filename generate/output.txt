@@ -1,0 +1,89 @@
+DO $$
+DECLARE
+    current_flight_id INT;
+BEGIN
+    INSERT INTO flight (airliner_id, scheduled_departure_time, scheduled_arrival_time, actual_departure_time, actual_arrival_time)
+    VALUES 
+        (5, '2020-08-01 23:26:18.224780', '2020-08-02 03:23:28.585271', '2020-08-01 23:48:56.512801', '2020-08-02 03:48:41.854659')
+    RETURNING flight_id INTO current_flight_id;
+
+    INSERT INTO flight_airstrip (airstrip_id, flight_id, usage_type)
+    VALUES 
+        (2, current_flight_id, 'takeoff'),
+        (8, current_flight_id, 'landing');
+
+    INSERT INTO airliner_position (airliner_id, altitude, latitude, longitude, time, velocity, status)
+    VALUES 
+    (5, 192, 55.972778, 37.414722, '2020-08-01 22:26:18.224780', 0, 'ready_for_takeoff'),
+	(5, 292, 55.98339479690303, 37.415008828242584, '2020-08-01 23:48:56.512801', 492.76692757842403, 'in_flight'),
+	(5, 6109.398530183807, 43.45017864114496, 39.95751272481564, '2020-08-02 03:03:28.585271', 843.0039926146865, 'ready_to_land'),
+	(5, 27, 43.45, 39.956667, '2020-08-02 03:48:41.854659', 0, 'waiting_to_be_checked_by_a_mechanic');
+
+    INSERT INTO flight_employee (employee_id, flight_id)
+    VALUES 
+    (9, current_flight_id),
+    (13, current_flight_id),
+    (21, current_flight_id),
+    (139, current_flight_id);
+
+    WITH inserted_passengers AS (
+        INSERT INTO passenger (lastname, firstname, patronymic, passport_number, citizenship)
+        VALUES 
+        ('Novikov', 'Leonid', 'Fedorovich', '2019194', 'Russian Federation'),
+	('Bogdanov', 'Mikhail', 'Yaroslavovich', '8807955', 'Russian Federation'),
+	('Smirnov', 'Konstantin', 'Vyacheslavovich', '6250064', 'Russian Federation'),
+	('Egorov', 'Miron', 'Borisovich', '4454854', 'Russian Federation'),
+	('Grigoriev', 'Gleb', 'Artemovich', '9343405', 'Russian Federation'),
+	('Maksimov', 'Mark', 'Yurievich', '7830441', 'Russian Federation'),
+	('Krylov', 'Svyatoslav', 'Vsevolodovich', '4557315', 'Russian Federation'),
+	('Zaitsev', 'Vsevolod', 'Gennadievich', '3632763', 'Russian Federation'),
+	('Kuznetsov', 'Yaroslav', 'Eduardovich', '2402655', 'Russian Federation'),
+	('Ivanov', 'Yuriy', 'Kirillovich', '8674559', 'Russian Federation'),
+	('Nikolaev', 'Anatoliy', 'Alekseevich', '4576999', 'Russian Federation'),
+	('Semenov', 'Fedor', 'Antonovich', '9863768', 'Russian Federation'),
+	('Timofeev', 'Andrey', 'Nikolaevich', '6538793', 'Russian Federation'),
+	('Zhukov', 'Aleksey', 'Vadimovich', '8968192', 'Russian Federation'),
+	('Golubev', 'Aleksandr', 'Markovich', '4594296', 'Russian Federation'),
+	('Kozlov', 'Innokentiy', 'Anatolievich', '3406475', 'Russian Federation'),
+	('Arkhipov', 'Boris', 'Bogdanovich', '6812841', 'Russian Federation'),
+	('Isaev', 'Ruslan', 'Vasilievich', '8247465', 'Russian Federation'),
+	('Romanov', 'Ivan', 'Viktorovich', '4018498', 'Russian Federation'),
+	('Yakovlev', 'Danila', 'Ruslanovich', '8061195', 'Russian Federation'),
+	('Fedorov', 'Eduard', 'Mironovich', '2153492', 'Russian Federation'),
+	('Rodionov', 'Timur', 'Evgenievich', '2717626', 'Russian Federation'),
+	('Morozov', 'Matvey', 'Savelevich', '5960805', 'Russian Federation'),
+	('Petrov', 'Sergey', 'Timurovich', '5751104', 'Russian Federation'),
+	('Belov', 'Nikolay', 'Petrovich', '4389836', 'Russian Federation'),
+	('Lebedev', 'Platon', 'Sergeevich', '4535137', 'Russian Federation'),
+	('Sidorov', 'Anton', 'Denisovich', '6454330', 'Russian Federation'),
+	('Filippov', 'Valeriy', 'Leonidovich', '6951493', 'Russian Federation'),
+	('Osipov', 'Oleg', 'Ivanovich', '1858764', 'Russian Federation'),
+	('Nesterov', 'Georgiy', 'Andreevich', '1672959', 'Russian Federation'),
+	('Tarasov', 'Kirill', 'Innokentievich', '7950787', 'Russian Federation'),
+	('Komarov', 'David', 'Danilovich', '5086458', 'Russian Federation'),
+	('Pavlov', 'Vladimir', 'Georgievich', '4768210', 'Russian Federation'),
+	('Sokolov', 'Arkadiy', 'Igorevich', '9132603', 'Russian Federation')
+        RETURNING passenger_id
+    ),
+    passenger_tickets AS (
+        SELECT passenger_id, current_flight_id as flight_id
+        FROM inserted_passengers
+    ),
+    empty_tickets AS (
+        SELECT 
+            NULL::INTEGER AS passenger_id,
+            current_flight_id as flight_id
+        FROM generate_series(1, 16)
+    )
+
+    INSERT INTO flight_ticket (passenger_id, flight_id)
+    SELECT passenger_id, flight_id FROM passenger_tickets
+    UNION ALL
+    SELECT passenger_id, flight_id FROM empty_tickets;
+    
+    RAISE NOTICE 'Transaction completed successfully. Flight created ID: %', current_flight_id;
+EXCEPTION WHEN OTHERS THEN
+
+    RAISE EXCEPTION 'Error: %', SQLERRM;
+
+END $$;

@@ -1,0 +1,3 @@
+"airport_id","latitude","longitude","altitude","airspace_radius","city","country","name"
+1,"55.972778","37.414722",192,NULL,"Moscow","Russia","Sheremetyevo"
+4,"43.450000","39.956667",27,NULL,"Sochi","Russia","Sochi"
